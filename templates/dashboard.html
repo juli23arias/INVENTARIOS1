@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - InventarioWeb{% endblock %}
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12">
+        <h2 class="mb-4">Panel de Control</h2>
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="card text-center h-100 shadow-sm border-primary">
+                    <div class="card-body">
+                        <h5 class="card-title text-primary"><i class="bi bi-box-seam fs-1"></i></h5>
+                        <h6 class="card-subtitle mb-2 text-muted">Productos</h6>
+                        <a href="{% url 'productos:list' %}" class="btn btn-outline-primary btn-sm mt-3">Gestionar</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card text-center h-100 shadow-sm border-success">
+                    <div class="card-body">
+                        <h5 class="card-title text-success"><i class="bi bi-cart-check fs-1"></i></h5>
+                        <h6 class="card-subtitle mb-2 text-muted">Ventas</h6>
+                        <a href="#" class="btn btn-outline-success btn-sm mt-3">Ir a Ventas</a>
+                    </div>
+                </div>
+            </div>
+            
+            {% if user.rol == 'ADMIN' %}
+            <div class="col-md-3">
+                <div class="card text-center h-100 shadow-sm border-warning">
+                    <div class="card-body">
+                        <h5 class="card-title text-warning"><i class="bi bi-clipboard2-data fs-1"></i></h5>
+                        <h6 class="card-subtitle mb-2 text-muted">Inventario</h6>
+                        <a href="#" class="btn btn-outline-warning btn-sm mt-3">Ajustar</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card text-center h-100 shadow-sm border-info">
+                    <div class="card-body">
+                        <h5 class="card-title text-info"><i class="bi bi-truck fs-1"></i></h5>
+                        <h6 class="card-subtitle mb-2 text-muted">Proveedores</h6>
+                        <a href="#" class="btn btn-outline-info btn-sm mt-3">Consultar</a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        {% if alertas_stock %}
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="alert alert-danger shadow-sm border-danger">
+                    <h5 class="alert-heading"><i class="bi bi-exclamation-triangle-fill"></i> Alertas de Stock Bajo</h5>
+                    <p>Los siguientes productos tienen stock bajo o nulo y necesitan reabastecimiento:</p>
+                    <hr>
+                    <ul class="mb-0">
+                        {% for producto in alertas_stock %}
+                        <li><strong>{{ producto.nombre }}</strong> - Stock: {{ producto.stock }} (Mínimo requerido: {{ producto.stock_minimo }})</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

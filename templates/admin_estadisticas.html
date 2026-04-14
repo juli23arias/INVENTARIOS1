@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Estadísticas Avanzadas - ShopPoint{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h2 class="mb-0 fw-bold" style="color: var(--dark-blue);">📊 Centro de Estadísticas</h2>
+        <p class="text-muted mb-0">Análisis detallado de ventas, categorías y rendimiento comercial.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'export_report_csv' %}" class="btn btn-primary rounded-pill fw-bold shadow-sm px-4">
+            <i class="bi bi-download me-2"></i> Exportar Datos (CSV)
+        </a>
+    </div>
+</div>
+
+<!-- Grid de Gráficas -->
+<div class="row g-4 mb-5">
+    <!-- Tendencia de Ventas -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm" style="border-radius: 20px;">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-4">Tendencia de Ventas (7 días)</h5>
+                <canvas id="ventasDiaChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Ingresos Operativos -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm" style="border-radius: 20px;">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-4">Ingresos Operativos ($)</h5>
+                <canvas id="ingresosChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ventas por Categoría -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 20px;">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-4">Ventas por Categoría</h5>
+                <canvas id="categoriasChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top 5 Productos -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 20px;">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-4">Top 5 Productos</h5>
+                <canvas id="topProductosChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Métodos de Pago -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 20px;">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-4">Métodos de Pago</h5>
+                <canvas id="metodosChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const colors = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444', '#6366F1'];
+
+    // 1. Ventas por Día
+    const vData = JSON.parse('{{ chart_ventas_dia|safe }}');
+    new Chart(document.getElementById('ventasDiaChart'), {
+        type: 'bar',
+        data: {
+            labels: vData.labels,
+            datasets: [{
+                label: 'Ventas',
+                data: vData.data,
+                backgroundColor: '#3B82F6',
+                borderRadius: 8
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+
+    // 2. Ingresos
+    const iData = JSON.parse('{{ chart_ingresos|safe }}');
+    new Chart(document.getElementById('ingresosChart'), {
+        type: 'line',
+        data: {
+            labels: iData.labels,
+            datasets: [{
+                label: 'Ingresos ($)',
+                data: iData.data,
+                borderColor: '#10B981',
+                backgroundColor: '#10B98122',
+                fill: true,
+                tension: 0.4
+            }]
+        }
+    });
+
+    // 3. Categorías
+    const cData = JSON.parse('{{ chart_categorias|safe }}');
+    new Chart(document.getElementById('categoriasChart'), {
+        type: 'pie',
+        data: {
+            labels: cData.labels,
+            datasets: [{
+                data: cData.data,
+                backgroundColor: colors
+            }]
+        }
+    });
+
+    // 4. Top Productos
+    const tData = JSON.parse('{{ chart_top_productos|safe }}');
+    new Chart(document.getElementById('topProductosChart'), {
+        type: 'bar',
+        data: {
+            labels: tData.labels,
+            datasets: [{
+                label: 'Cantidad',
+                data: tData.data,
+                backgroundColor: '#8B5CF6',
+                borderRadius: 8
+            }]
+        },
+        options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
+    });
+
+    // 5. Métodos de Pago
+    const mData = JSON.parse('{{ chart_metodos|safe }}');
+    new Chart(document.getElementById('metodosChart'), {
+        type: 'doughnut',
+        data: {
+            labels: mData.labels,
+            datasets: [{
+                data: mData.data,
+                backgroundColor: ['#10B981', '#3B82F6']
+            }]
+        }
+    });
+});
+</script>
+
+<style>
+    canvas { max-width: 100% !important; }
+</style>
+{% endblock %}

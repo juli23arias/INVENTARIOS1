@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Modificar Permisos - InventarioWeb{% endblock %}
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-8">
+        <h2 class="mb-0 fw-bold" style="color: var(--dark-blue);">Modificar Jerarquía: @{{ object.username }}</h2>
+        <p class="text-muted mt-1">Concede privilegios administrativos o revoca accesos temporales.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card h-100 card-semantic card-blue shadow-sm">
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        {% for field in form %}
+                        <div class="col-12 mb-3">
+                            <label class="form-label fw-bold text-dark small">{{ field.label }}</label>
+                            {% if field.name == 'is_active' %}
+                                <div class="form-check form-switch mt-2">
+                                    {{ field }}
+                                    <label class="form-check-label text-muted small ms-2" for="{{ field.id_for_label }}">Permitir acceso al login</label>
+                                </div>
+                            {% else %}
+                                {{ field }}
+                            {% endif %}
+                            
+                            {% for error in field.errors %}
+                            <small class="text-danger d-block mt-1"><i class="bi bi-x-circle"></i> {{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <hr class="mt-4 mb-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{% url 'usuarios:list' %}" class="btn btn-outline-secondary rounded-pill px-4">Cancelar</a>
+                        <button type="submit" class="btn btn-primary rounded-pill px-5 shadow-sm"><i class="bi bi-check2-all"></i> Aplicar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card h-100 border-0 bg-light p-4 shadow-sm" style="border-radius: 20px;">
+            <h5 class="fw-bold mb-3"><i class="bi bi-info-circle text-primary"></i> Guía de Roles</h5>
+            <ul class="list-unstyled text-muted small">
+                <li class="mb-3">
+                    <span class="badge bg-danger">ADMIN</span> Control total. Puede manipular finanzas, roles, configuración y borrar.
+                </li>
+                <li class="mb-3">
+                    <span class="badge bg-primary">CAJERO</span> Sistema Limitado (POS). Únicamente interactúa despachando stock.
+                </li>
+                <li>
+                    <span class="badge bg-success">CLIENTE</span> Externos. Plataforma E-commerce y acceso público a Puntos de Fidelidad.
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const selects = document.querySelectorAll("select");
+        selects.forEach(s => s.classList.add("form-control", "form-select", "shadow-none", "border-light", "bg-light"));
+        
+        const toggles = document.querySelectorAll("input[type=checkbox]");
+        toggles.forEach(t => t.classList.add("form-check-input"));
+    });
+</script>
+{% endblock %}

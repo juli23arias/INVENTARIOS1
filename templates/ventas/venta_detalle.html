@@ -1,0 +1,404 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}TPV Profesional - Venta #{{ venta.id|stringformat:"05d" }}{% endblock %}
+
+{% block content %}
+<style>
+    /* Estructura Base POS Optimizada */
+    .pos-wrapper {
+        display: grid;
+        grid-template-columns: 25% 50% 25%;
+        gap: 10px;
+        height: calc(100vh - 110px);
+        margin-top: -15px;
+    }
+
+    /* Columna IZQUIERDA: Carrito Compacto */
+    .cart-col {
+        background: #fff;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+    .cart-header { padding: 10px 15px; border-bottom: 1px solid #eee; background: #fafafa; }
+    .cart-items { flex-grow: 1; overflow-y: auto; padding: 5px; }
+    .cart-footer { padding: 15px; border-top: 2px solid var(--primary-blue); background: #fafafa; }
+
+    /* Columna CENTRAL: Productos (Grid Denso) */
+    .product-col {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .search-bar-container { position: relative; }
+    .category-scroll {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 5px;
+    }
+    .cat-btn {
+        padding: 5px 12px;
+        font-size: 0.85rem;
+        border-radius: 20px;
+        border: 1px solid #ddd;
+        background: #fff;
+        white-space: nowrap;
+    }
+    .cat-btn.active {
+        background: var(--primary-blue);
+        color: #fff;
+    }
+
+    .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 8px;
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+    .product-card {
+        background: #fff;
+        border-radius: 10px;
+        border: 1px solid #eee;
+        transition: all 0.2s;
+        cursor: pointer;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    .product-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--primary-blue); }
+    .product-card img { width: 100%; height: 75px; object-fit: cover; background: #f9f9f9; }
+    .product-card .p-info { padding: 8px; text-align: center; line-height: 1.2; }
+    .p-name { font-size: 0.85rem; height: 2em; overflow: hidden; }
+    .p-price { font-size: 0.9rem; margin-top: 4px; }
+
+    /* Columna DERECHA: Acciones Compactas */
+    .actions-col {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .action-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .btn-pay { font-size: 1.1rem; padding: 12px; font-weight: 700; border-radius: 10px; }
+    .total-display-mini { font-family: 'Oswald', sans-serif; font-size: 1.8rem; color: var(--primary-blue); }
+
+    /* Estilos tabla carrito reducida */
+    .table-cart td { padding: 6px 4px; font-size: 0.85rem; vertical-align: middle; }
+</style>
+
+<div class="pos-wrapper">
+    <!-- 1. IZQUIERDA: CARRITO -->
+    <div class="cart-col">
+        <div class="cart-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-cart3 text-primary"></i> Mi Carrito</h5>
+            <span class="badge bg-primary rounded-pill" id="cart-count">{{ detalles|length }}</span>
+        </div>
+        
+        <div class="cart-items">
+            <table class="table table-hover table-cart mb-0">
+                <tbody id="cart-body">
+                    {% for item in detalles %}
+                    <tr id="item-{{ item.id }}">
+                        <td style="width: 50%;">
+                            <div class="fw-bold text-truncate" style="max-width: 140px;">{{ item.producto.nombre }}</div>
+                            <small class="text-muted">$ {{ item.precio_unitario }}</small>
+                        </td>
+                        <td class="text-center">
+                            <span class="fw-bold">x {{ item.cantidad }}</span>
+                        </td>
+                        <td class="text-end fw-bold">
+                            ${{ item.subtotal }}
+                        </td>
+                        <td class="text-end">
+                            <button class="btn btn-sm text-danger border-0 p-1" onclick="deleteItem({{ item.id }})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr id="empty-msg">
+                        <td colspan="4" class="text-center py-5">
+                            <div class="text-muted small">El carrito está vacío</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="cart-footer">
+            <div class="d-flex justify-content-between mb-1">
+                <span class="text-muted small">Subtotal:</span>
+                <span id="subtotal-val" class="fw-bold small">${{ venta.total }}</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="fw-bold text-uppercase small">Total:</span>
+                <span id="total-val" class="total-display-mini fw-bold">${{ venta.total }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. CENTRAL: PRODUCTOS -->
+    <div class="product-col">
+        <div class="search-bar-container">
+            <div class="input-group input-group-lg shadow-sm rounded-pill overflow-hidden border">
+                <span class="input-group-text bg-white border-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" id="pos-search" class="form-control border-0" placeholder="Buscar productos por nombre o código...">
+            </div>
+            <div id="search-dropdown" class="list-group position-absolute w-100 shadow-lg d-none" style="z-index: 1000; top: 100%;"></div>
+        </div>
+
+        <div class="category-scroll mt-2">
+            <button class="cat-btn active" onclick="filterCategory(this, '')">Todos</button>
+            {% for cat in categorias %}
+            <button class="cat-btn" onclick="filterCategory(this, '{{ cat }}')">{{ cat }}</button>
+            {% endfor %}
+        </div>
+
+        <div class="product-grid" id="product-grid">
+            <!-- Cargado vía AJAX -->
+            <div class="text-center w-100 py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 text-muted">Cargando catálogo...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. DERECHA: ACCIONES -->
+    <div class="actions-col">
+        <div class="action-card">
+            <h6 class="fw-bold text-muted text-uppercase mb-3">Escáner Rápido</h6>
+            <div class="input-group mb-3">
+                <span class="input-group-text bg-light"><i class="bi bi-upc-scan"></i></span>
+                <input type="text" id="scanner-input" class="form-control bg-light" placeholder="ID Producto..." autofocus>
+            </div>
+        </div>
+
+        <div class="action-card">
+            <h6 class="fw-bold text-muted text-uppercase mb-3">Pago y Cambio</h6>
+            <div class="d-grid gap-2 mb-3">
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="pay_method" id="cash" value="EFECTIVO" checked>
+                    <label class="btn btn-outline-primary" for="cash">Efectivo</label>
+                    <input type="radio" class="btn-check" name="pay_method" id="card" value="TARJETA">
+                    <label class="btn btn-outline-primary" for="card">Tarjeta</label>
+                </div>
+            </div>
+            <div class="mb-2">
+                <label class="small text-muted fw-bold">RECIBIDO ($)</label>
+                <input type="number" id="cash-received" class="form-control form-control-lg fw-bold" value="0" oninput="calculateChange()">
+            </div>
+            <div class="mb-0">
+                <label class="small text-muted fw-bold">CAMBIO ($)</label>
+                <input type="text" id="cash-change" class="form-control form-control-lg fw-bold text-success bg-light" value="$0" readonly>
+            </div>
+        </div>
+
+        <div class="mt-auto d-grid gap-2">
+            <button class="btn btn-success btn-pay shadow" onclick="finalizeSale()">
+                <i class="bi bi-check2-circle me-2"></i> FINALIZAR VENTA
+            </button>
+            <button class="btn btn-danger py-3 fw-bold rounded-3" onclick="window.location.href='{% url 'ventas:crear' %}'">
+                <i class="bi bi-trash me-2"></i> CANCELAR
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Template para Producto Card -->
+<template id="product-card-template">
+    <div class="product-card" onclick="addToCart(0)">
+        <img src="" alt="img">
+        <div class="p-info">
+            <div class="fw-bold small text-truncate p-name"></div>
+            <div class="text-primary fw-bold p-price"></div>
+            <div class="text-muted x-small p-stock" style="font-size: 0.7rem;"></div>
+        </div>
+    </div>
+</template>
+
+<script>
+    const VENTA_ID = {{ venta.id }};
+    const CSRF_TOKEN = '{{ csrf_token }}';
+    
+    let currentCategory = '';
+    let searchQuery = '';
+
+    // --- CARGA INICIAL ---
+    document.addEventListener('DOMContentLoaded', () => {
+        loadProducts();
+        
+        // Buscador Central
+        document.getElementById('pos-search').addEventListener('input', (e) => {
+            searchQuery = e.target.value.trim();
+            loadProducts();
+        });
+
+        // Escáner Rápido
+        document.getElementById('scanner-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const val = e.target.value.trim();
+                if (val) addToCart(val);
+                e.target.value = '';
+            }
+        });
+    });
+
+    // --- FUNCIONES API ---
+
+    async function loadProducts() {
+        const grid = document.getElementById('product-grid');
+        const url = `{% url 'ventas:api_productos' %}?categoria=${currentCategory}&q=${searchQuery}`;
+        
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            grid.innerHTML = '';
+            if (data.results.length === 0) {
+                grid.innerHTML = '<div class="text-center w-100 py-5 text-muted">No se encontraron productos</div>';
+                return;
+            }
+
+            const template = document.getElementById('product-card-template');
+            data.results.forEach(p => {
+                const clone = template.content.cloneNode(true);
+                const card = clone.querySelector('.product-card');
+                card.setAttribute('onclick', `addToCart(${p.id})`);
+                clone.querySelector('img').src = p.imagen_url;
+                clone.querySelector('.p-name').textContent = p.nombre;
+                clone.querySelector('.p-price').textContent = `$ ${p.precio}`;
+                clone.querySelector('.p-stock').textContent = `Stock: ${p.stock}`;
+                grid.appendChild(clone);
+            });
+        } catch (e) {
+            grid.innerHTML = '<div class="alert alert-danger">Error al cargar productos</div>';
+        }
+    }
+
+    function filterCategory(btn, cat) {
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentCategory = cat;
+        loadProducts();
+    }
+
+    async function addToCart(productoId) {
+        const response = await fetch(`{% url 'ventas:api_agregar_producto' venta.id %}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+            body: JSON.stringify({ producto_id: productoId, cantidad: 1 })
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            refreshCartUI(data.item, data.venta_total);
+            loadProducts(); // Update stock in grid
+        } else {
+            alert(data.error);
+        }
+    }
+
+    async function deleteItem(detalleId) {
+        const response = await fetch(`{% url 'ventas:api_eliminar_detalle' 0 %}`.replace('0', detalleId), {
+            method: 'POST',
+            headers: { 'X-CSRFToken': CSRF_TOKEN }
+        });
+        const data = await response.json();
+        if (data.success) {
+            document.getElementById(`item-${detalleId}`).remove();
+            updateTotals(data.venta_total);
+            loadProducts();
+        }
+    }
+
+    function refreshCartUI(item, total) {
+        const msg = document.getElementById('empty-msg');
+        if (msg) msg.remove();
+
+        let row = document.getElementById(`item-${item.id}`);
+        if (row) {
+            row.querySelector('.text-center .fw-bold').textContent = `x ${item.cantidad}`;
+            row.querySelector('.text-end.fw-bold').textContent = `$${item.subtotal.toFixed(2)}`;
+        } else {
+            const tbody = document.getElementById('cart-body');
+            tbody.insertAdjacentHTML('beforeend', `
+                <tr id="item-${item.id}" class="fade-in">
+                    <td style="width: 50%;">
+                        <div class="fw-bold text-truncate" style="max-width: 140px;">${item.producto}</div>
+                        <small class="text-muted">$ ${item.precio.toFixed(2)}</small>
+                    </td>
+                    <td class="text-center"><span class="fw-bold">x ${item.cantidad}</span></td>
+                    <td class="text-end fw-bold">$${item.subtotal.toFixed(2)}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm text-danger border-0 p-1" onclick="deleteItem(${item.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `);
+        }
+        updateTotals(total);
+    }
+
+    function updateTotals(total) {
+        document.getElementById('subtotal-val').textContent = `$${total.toFixed(2)}`;
+        document.getElementById('total-val').textContent = `$${total.toFixed(2)}`;
+        document.getElementById('cart-count').textContent = document.getElementById('cart-body').children.length;
+        calculateChange(); // Update change when total changes
+    }
+
+    function calculateChange() {
+        const total = parseFloat(document.getElementById('total-val').textContent.replace('$', ''));
+        const received = parseFloat(document.getElementById('cash-received').value) || 0;
+        const change = Math.max(0, received - total);
+        document.getElementById('cash-change').value = `$${change.toFixed(2)}`;
+        return { total, received, change };
+    }
+
+    async function finalizeSale() {
+        const { total, received, change } = calculateChange();
+        const method = document.querySelector('input[name="pay_method"]:checked').value;
+
+        if (total <= 0) {
+            alert('El carrito está vacío.');
+            return;
+        }
+
+        if (method === 'EFECTIVO' && received < total) {
+            alert('El monto recibido es insuficiente.');
+            return;
+        }
+
+        if (confirm('¿Confirmar pago y finalizar venta?')) {
+            const response = await fetch(`{% url 'ventas:api_finalizar_venta' venta.id %}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+                body: JSON.stringify({
+                    metodo_pago: method,
+                    monto_recibido: received,
+                    monto_cambio: change
+                })
+            });
+            const data = await response.json();
+            if (data.success) {
+                window.location.href = "{% url 'ventas:factura' venta.id %}";
+            } else {
+                alert('Error al finalizar venta: ' + data.error);
+            }
+        }
+    }
+
+</script>
+{% endblock %}
+
+

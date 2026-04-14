@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Ajuste de Inventario - InventarioWeb{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-3">
+        <a href="{% url 'inventario:historial' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Ver Historial</a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-warning">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0"><i class="bi bi-tools"></i> Ajuste Manual de Inventario</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.non_field_errors }}
+                    {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-warning w-100"><i class="bi bi-save"></i> Registrar Movimiento</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let inputs = document.querySelectorAll("input, select");
+        inputs.forEach(input => {
+            if(!input.classList.contains('form-control') && !input.classList.contains('form-select')){
+                input.classList.add(input.tagName === 'SELECT' ? 'form-select' : 'form-control');
+            }
+        });
+    });
+</script>
+{% endblock %}

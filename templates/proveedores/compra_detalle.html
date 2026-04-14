@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}Detalle de Compra #{{ compra.id|stringformat:"05d" }} - InventarioWeb{% endblock %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <a href="{% url 'proveedores:compras_list' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Volver a Compras</a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Panel Agregar Producto a la Compra -->
+    <div class="col-md-4">
+        <div class="card border-primary mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-box-arrow-in-down"></i> Ingresar Producto</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.non_field_errors }}
+                    {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-plus-circle"></i> Agregar a Compra</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <h6 class="text-muted text-uppercase mb-2">Total Compra</h6>
+                <h2 class="text-success mb-0">${{ total|floatformat:2 }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Detalles de la Compra -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Detalles de Compra #{{ compra.id|stringformat:"05d" }}</h5>
+                <span class="badge bg-secondary">Proveedor: {{ compra.proveedor.nombre }}</span>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th class="text-center">Cantidad</th>
+                            <th class="text-end">Costo Unitario</th>
+                            <th class="text-end">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in detalles %}
+                        <tr>
+                            <td>{{ item.producto.nombre }}</td>
+                            <td class="text-center">{{ item.cantidad }}</td>
+                            <td class="text-end">${{ item.precio_compra }}</td>
+                            <td class="text-end fw-bold">${{ item.subtotal }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-5">
+                                <i class="bi bi-box fs-1 d-block mb-2"></i>
+                                No se han ingresado productos en esta compra.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let inputs = document.querySelectorAll("input, select");
+        inputs.forEach(input => {
+            if(!input.classList.contains('form-control') && !input.classList.contains('form-select')){
+                input.classList.add(input.tagName === 'SELECT' ? 'form-select' : 'form-control');
+            }
+        });
+    });
+</script>
+{% endblock %}

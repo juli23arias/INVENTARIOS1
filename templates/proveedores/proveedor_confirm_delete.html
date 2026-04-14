@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Eliminar Proveedor - InventarioWeb{% endblock %}
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5">
+        <div class="card border-danger mb-3">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle-fill"></i> Confirmar Eliminación</h5>
+            </div>
+            <div class="card-body text-center">
+                <p class="card-text">¿Estás seguro de que deseas eliminar el proveedor <strong>{{ object.nombre }}</strong>?</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <a href="{% url 'proveedores:list' %}" class="btn btn-secondary me-2">Cancelar</a>
+                    <button type="submit" class="btn btn-danger">Sí, Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

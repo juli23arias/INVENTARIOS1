@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Panel de Control de Caja{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h2 class="mb-0 fw-bold" style="color: var(--dark-blue);">Dashboard de Caja</h2>
+        <p class="text-muted mb-0">Gestión de ventas y control de inventario en tiempo real.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 border border-primary border-opacity-25 rounded-pill">
+            <i class="bi bi-calendar3 me-1"></i> {% now "d M, Y" %}
+        </span>
+    </div>
+</div>
+
+<!-- 1. MÉTRICAS PRINCIPALES -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card-colored bg-primary text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-uppercase small fw-bold opacity-75 mb-1">Ventas del Día</h6>
+                    <h3 class="mb-0 fw-bold">${{ ventas_dia_total|floatformat:0 }}</h3>
+                </div>
+                <div class="fs-1 opacity-25">
+                    <i class="bi bi-currency-dollar"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card-colored bg-success text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-uppercase small fw-bold opacity-75 mb-1">Transacciones</h6>
+                    <h3 class="mb-0 fw-bold">{{ ventas_dia_count }}</h3>
+                </div>
+                <div class="fs-1 opacity-25">
+                    <i class="bi bi-receipt-cutoff"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card-colored bg-info text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-uppercase small fw-bold opacity-75 mb-1">Stock Total</h6>
+                    <h3 class="mb-0 fw-bold">{{ total_stock }}</h3>
+                </div>
+                <div class="fs-1 opacity-25">
+                    <i class="bi bi-box-seam"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card-colored bg-warning text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-uppercase small fw-bold opacity-75 mb-1">Top Producto</h6>
+                    <h3 class="mb-0 fw-bold text-truncate" title="{{ top_producto }}" style="max-width: 150px;">{{ top_producto }}</h3>
+                </div>
+                <div class="fs-1 opacity-25">
+                    <i class="bi bi-star-fill"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- 2. TARJETA PRINCIPAL DE ACCIÓN -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm overflow-hidden" 
+             style="background: linear-gradient(135deg, #6366f1, #a855f7); border-radius: 20px; color: white;">
+            <div class="card-body p-5">
+                <div class="row align-items-center">
+                    <div class="col-md-8 text-start">
+                        <h1 class="display-5 fw-bold mb-3">Iniciar nueva venta</h1>
+                        <p class="fs-5 opacity-75 mb-4">Accede rápidamente al sistema de cobro profesional y registra una nueva transacción.</p>
+                        <a href="{% url 'ventas:crear' %}" class="btn btn-light btn-xl rounded-pill fw-bold px-5 py-3 shadow-lg">
+                            <i class="bi bi-cash-stack me-2"></i> COBRAR AHORA
+                        </a>
+                    </div>
+                    <div class="col-md-4 d-none d-md-block text-center">
+                        <i class="bi bi-cart-plus-fill" style="font-size: 8rem; opacity: 0.2;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. ACTIVIDAD RECIENTE -->
+        <div class="card border-0 shadow-sm mt-4" style="border-radius: 20px;">
+            <div class="card-header bg-white border-0 py-3 px-4">
+                <h5 class="fw-bold mb-0">Últimas Ventas Realizadas</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="px-4 text-muted small fw-bold">FACTURA</th>
+                                <th class="text-muted small fw-bold">FECHA</th>
+                                <th class="text-muted small fw-bold">TOTAL</th>
+                                <th class="text-muted small fw-bold">MÉTODO</th>
+                                <th class="text-center text-muted small fw-bold">TICKET</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for v in ultimas_ventas %}
+                            <tr>
+                                <td class="px-4 fw-bold text-primary">#{{ v.id|stringformat:"05d" }}</td>
+                                <td class="small">{{ v.fecha|date:"d/m/Y H:i" }}</td>
+                                <td class="fw-bold">${{ v.total|floatformat:0 }}</td>
+                                <td>
+                                    <span class="badge rounded-pill {% if v.metodo_pago == 'EFECTIVO' %}bg-success{% else %}bg-info{% endif %} bg-opacity-10 {% if v.metodo_pago == 'EFECTIVO' %}text-success{% else %}text-info{% endif %} px-3">
+                                        {{ v.metodo_pago }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <a href="{% url 'ventas:factura' v.id %}" class="btn btn-sm btn-outline-primary border-0 rounded-circle">
+                                        <i class="bi bi-printer"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">No hay ventas registradas.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. ACCESOS RÁPIDOS -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-4" style="border-radius: 20px;">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-4">Accesos Rápidos</h5>
+                <div class="d-grid gap-3">
+                    <a href="{% url 'ventas:crear' %}" class="card-colored card-blue p-3 d-flex align-items-center text-decoration-none" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
+                        <div class="card-icon me-3 bg-white bg-opacity-20 rounded-pill p-2" style="width:40px; height:40px; display:flex; align-items:center; justify-content:center;">
+                            <i class="bi bi-plus-lg"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-bold text-white">Nueva Venta</h6>
+                            <small class="text-white opacity-75">Sistema de cobro rápido</small>
+                        </div>
+                    </a>
+
+                    <a href="{% url 'productos:list' %}" class="card-colored bg-white border border-light p-3 d-flex align-items-center text-decoration-none shadow-sm hvr-grow">
+                        <div class="card-icon me-3 bg-primary bg-opacity-10 text-primary rounded-pill p-2" style="width:40px; height:40px; display:flex; align-items:center; justify-content:center;">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-bold text-dark">Ver Inventario</h6>
+                            <small class="text-muted">Visualiza disponibilidad actual</small>
+                        </div>
+                    </a>
+
+                    <a href="{% url 'ventas:list' %}" class="card-colored bg-white border border-light p-3 d-flex align-items-center text-decoration-none shadow-sm hvr-grow">
+                        <div class="card-icon me-3 bg-success bg-opacity-10 text-success rounded-pill p-2" style="width:40px; height:40px; display:flex; align-items:center; justify-content:center;">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-bold text-dark">Historial Ventas</h6>
+                            <small class="text-muted">Consulta todas las ventas</small>
+                        </div>
+                    </a>
+                </div>
+                <div class="mt-4 p-4 bg-light border-0 rounded-4">
+                    <p class="small text-muted mb-0"><i class="bi bi-info-circle me-1"></i> Recuerda cerrar sesión al finalizar tu turno.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
