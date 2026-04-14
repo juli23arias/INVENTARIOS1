@@ -6,6 +6,7 @@ from productos.models import Producto
 from proveedores.models import Proveedor, Compra, DetalleCompra
 from inventario.models import InventarioHistorial
 from ventas.models import Venta, DetalleVenta
+from productos.models import Producto, Categoria
 
 
 class Command(BaseCommand):
@@ -54,12 +55,15 @@ class Command(BaseCommand):
         self.stdout.write("[OK] Proveedores cargados")
 
         # 3. Productos
+        cat_abarrotes, _ = Categoria.objects.get_or_create(nombre='Abarrotes')
+        cat_bebidas, _ = Categoria.objects.get_or_create(nombre='Bebidas')
+        cat_snacks, _ = Categoria.objects.get_or_create(nombre='Snacks')
+        cat_aseo, _ = Categoria.objects.get_or_create(nombre='Aseo')
         productos_data = [
-            {'nombre': 'Pala Tramontina', 'precio': '15.50', 'stock': 20, 'categoria': 'Herramientas', 'stock_minimo': 5},
-            {'nombre': 'Fertilizante NPK 50kg', 'precio': '45.00', 'stock': 10, 'categoria': 'Fertilizantes', 'stock_minimo': 3},
-            {'nombre': 'Machete Collin', 'precio': '8.25', 'stock': 50, 'categoria': 'Herramientas', 'stock_minimo': 10},
-            {'nombre': 'Semillas de Maíz Trueno 1kg', 'precio': '5.00', 'stock': 100, 'categoria': 'Semillas', 'stock_minimo': 20},
-            {'nombre': 'Bomba Fumigadora 20L', 'precio': '35.00', 'stock': 2, 'categoria': 'Equipos', 'stock_minimo': 3},
+            {'nombre': 'Arroz Diana 1kg', 'precio': '3.50', 'stock': 50, 'categoria': cat_abarrotes, 'stock_minimo': 10},
+            {'nombre': 'Coca Cola 1.5L', 'precio': '2.50', 'stock': 30, 'categoria': cat_bebidas, 'stock_minimo': 5},
+            {'nombre': 'Papas Margarita', 'precio': '1.20', 'stock': 40, 'categoria': cat_snacks, 'stock_minimo': 10},
+            {'nombre': 'Jabón Rey', 'precio': '2.00', 'stock': 20, 'categoria': cat_aseo, 'stock_minimo': 5},
         ]
 
         prods = []
